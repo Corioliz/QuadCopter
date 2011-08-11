@@ -8,10 +8,11 @@ Gyroscope::Gyroscope() {
 	MODE_80 = 0x04;
 	MODE_20 = 0x06;
 	INT_DIS = 0x01;
-	countsToDps = 1/1.33f;
+	countsToDps = 1/1.33f*0.75;
 	XOffset = 0;
 	YOffset = 0;
 	ZOffset = 0;
+	countsToRps = 1/1.33f * 0.75 * 0.0174533;
 }
 
 void Gyroscope::initialize() {
@@ -31,6 +32,13 @@ void Gyroscope::getData(float* rate) {
 	rate[1] = (parseRawData(rawY) - YOffset) * countsToDps;
 	rate[2] = (parseRawData(rawZ) - ZOffset) * countsToDps;
 	
+}
+
+void Gyroscope::getSIData(float* rate) {
+	cmr_read_rates();
+	rate[0] = (parseRawData(rawX) - XOffset) * countsToRps;
+	rate[1] = (parseRawData(rawY) - YOffset) * countsToRps;
+	rate[2] = (parseRawData(rawZ) - ZOffset) * countsToRps;
 }
 
 void Gyroscope::calibrate() {

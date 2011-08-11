@@ -18,6 +18,7 @@ class Gyroscope
 		float XOffset, YOffset, ZOffset;
 		char res;
 		float countsToDps;
+		float countsToRps;
 		
 		void cmr_write(byte address, byte data);
 		void cmr_read(byte address);
@@ -28,6 +29,7 @@ class Gyroscope
 		Gyroscope();
 		void initialize();		
 		void getData(float* rate);
+		void getSIData(float* rate)
 		void calibrate();
 };
 
