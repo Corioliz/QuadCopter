@@ -9,35 +9,27 @@
 #define PULSEONLOWLIMIT 950
 #define PULSEOFFLOWLIMIT 12000
 #define PULSEOFFHIGHLIMIT 24000
+#define NUMCHANNELS 6
 
-class Receiver {
+#define RX_YAW_MIN 1128
+#define RX_YAW_MAX 1948
+#define RX_YAW_AVG 1540
 
-  public:
-  void initialize() {
-	DDRK = 0; // All port K pins as input
-    PORTK = 0; // All port K pins set to "0"
-  
-    // PCMSK2 defines which interrupts PCINT16...23 trigger Pin Change Interrupt Vector2
-    for (int i = 0; i < numChannels; i++) {
-      PCMSK2 |= (0x01 << i);
-      pulseData[i].pulseEdge = 0;
-    }
-    PCICR |= 0x1 << 2; // Enable interrupt vector 2
-  }
-  void read() {
-  // Critical region (interrupts disabled because of read operation)
-  // SREG state saved (has to be done this way because the
-  // state is not known)
-  byte prevSREG = SREG;
-  cli(); // Disable interrupts while reading values
-  for (int i = 0; i < numChannels; i++) {
-    Serial.print(pulseData[i].lastWidth); Serial.print(",");
-  }
-  Serial.print(0); Serial.println("");  
-  SREG = prevSREG; // Restore SREG state
-  }
-	
-};
+#define RX_PITCH_MIN 1184
+#define RX_PITCH_MAX 1836
+#define RX_PITCH_AVG 1508
+
+#define RX_ROLL_MIN 1120
+#define RX_ROLL_MAX 1972
+#define RX_ROLL_AVG 1536
+
+#define RX_THROTTLE_MIN 1148
+#define RX_THROTTLE_MAX 1812
+
+#define ROLL 3
+#define PITCH 2
+#define YAW 0
+#define THROTTLE 1
 
 volatile static byte previousState = 0x00;
 // Struct for pulse data
@@ -48,7 +40,80 @@ typedef struct {
   unsigned long lastWidth;
 } 
 pinPulseData;
-volatile static pinPulseData pulseData[numChannels];
+volatile static pinPulseData pulseData[NUMCHANNELS];
+
+class Receiver {
+
+  public:
+  
+  // Conversion factors for rx values to angles
+  
+
+  
+  void initialize() {
+	
+	DDRK = 0; // All port K pins as input
+    PORTK = 0; // All port K pins set to "0"
+  
+    // PCMSK2 defines which interrupts PCINT16...23 trigger Pin Change Interrupt Vector2
+    for (int i = 0; i < NUMCHANNELS; i++) {
+      PCMSK2 |= (0x01 << i);
+      pulseData[i].pulseEdge = 0;
+    }
+    PCICR |= 0x1 << 2; // Enable interrupt vector 2
+	
+	// Precalculation for calibration values
+	yawFactor = 2.0 / (RX_YAW_MAX - RX_YAW_MIN);
+	yawOffset = (RX_YAW_MAX + RX_YAW_MIN) / 2;
+	
+	pitchFactor = 2.0 / (RX_PITCH_MAX - RX_PITCH_MIN);
+	pitchOffset = (RX_PITCH_MAX + RX_PITCH_MIN) / 2;
+	
+	rollFactor = 2.0 / (RX_ROLL_MAX - RX_ROLL_MIN);
+	rollOffset = (RX_ROLL_MAX + RX_ROLL_MIN) / 2;
+  }
+  
+  void read(float* rx_values) {
+	// Critical region (interrupts disabled because of read operation)
+	// SREG state saved (has to be done this way because the
+	// state is not known)
+	byte prevSREG = SREG;
+	cli(); // Disable interrupts while reading values
+	
+	rx_values[YAW] = yawFactor * (pulseData[YAW].lastWidth - yawOffset);
+	rx_values[PITCH] = pitchFactor * (pulseData[PITCH].lastWidth - pitchOffset);
+	rx_values[ROLL] = rollFactor * (pulseData[ROLL].lastWidth - rollOffset);
+	rx_values[THROTTLE] = pulseData[THROTTLE].lastWidth;
+	
+	SREG = prevSREG; // Restore SREG state
+  }
+  void print() {
+  // Critical region (interrupts disabled because of read operation)
+  // SREG state saved (has to be done this way because the
+  // state is not known)
+  byte prevSREG = SREG;
+  cli(); // Disable interrupts while reading values
+  for (int i = 0; i < NUMCHANNELS; i++) {
+    Serial.print(pulseData[i].lastWidth); Serial.print(",");
+  }
+  Serial.print(0); Serial.println("");  
+  SREG = prevSREG; // Restore SREG state
+  }
+  
+  
+  private:
+	float yawFactor;
+	float yawOffset;
+  
+    float pitchFactor;
+    float pitchOffset;
+  
+    float rollFactor;
+    float rollOffset;
+ 
+};
+
+
 
 void myInterruptFcn() {
   byte currentState;
@@ -96,3 +161,5 @@ void myInterruptFcn() {
 SIGNAL(PCINT2_vect) {
   myInterruptFcn(); 
 }
+
+#endif
