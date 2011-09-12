@@ -8,7 +8,7 @@
 class PID {
 	public:
 	
-	void initialize(float p, float i, float d, float ref, float in, float maxCtrl, float minCtrl) {
+	PID(float p, float i, float d, float ref, float in, float maxCtrl, float minCtrl) {
 		Kp = p;
 		Ki = i;
 		Kd = d;
