@@ -49,17 +49,14 @@ class Receiver {
 	// Conversion factors for rx values to angles
 	
 	void initialize() {
-	
 	DDRK = 0; // All port K pins as input
 	PORTK = 0; // All port K pins set to "0"
-	
 	// PCMSK2 defines which interrupts PCINT16...23 trigger Pin Change Interrupt Vector2
 	for (int i = 0; i < NUMCHANNELS; i++) {
 		PCMSK2 |= (0x01 << i);
 		pulseData[i].pulseEdge = 0;
 	}
 	PCICR |= 0x1 << 2; // Enable interrupt vector 2
-	
 	// Precalculation for calibration values
 	yawFactor = 2.0 / (RX_YAW_MAX - RX_YAW_MIN);
 	yawOffset = (RX_YAW_MAX + RX_YAW_MIN) / 2;
@@ -71,7 +68,7 @@ class Receiver {
 	rollOffset = (RX_ROLL_MAX + RX_ROLL_MIN) / 2;
 	}
   
-  void read(float* rx_values) {
+	void read(float* rx_values) {
 	// Critical region (interrupts disabled because of read operation)
 	// SREG state saved (has to be done this way because the
 	// state is not known)
@@ -85,17 +82,18 @@ class Receiver {
 	
 	SREG = prevSREG; // Restore SREG state
 	}
+	
 	void print() {
-	// Critical region (interrupts disabled because of read operation)
-	// SREG state saved (has to be done this way because the
-	// state is not known)
-	byte prevSREG = SREG;
-	cli(); // Disable interrupts while reading values
-	for (int i = 0; i < NUMCHANNELS; i++) {
-		Serial.print(pulseData[i].lastWidth); Serial.print(",");
-	}
-	Serial.print(0); Serial.println("");  
-	SREG = prevSREG; // Restore SREG state
+		// Critical region (interrupts disabled because of read operation)
+		// SREG state saved (has to be done this way because the
+		// state is not known)
+		byte prevSREG = SREG;
+		cli(); // Disable interrupts while reading values
+		for (int i = 0; i < NUMCHANNELS; i++) {
+			Serial.print(pulseData[i].lastWidth); Serial.print(",");
+		}
+		Serial.print(0); Serial.println("");  
+		SREG = prevSREG; // Restore SREG state
 	}
 	
 	private:
