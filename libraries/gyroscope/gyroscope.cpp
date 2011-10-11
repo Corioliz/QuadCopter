@@ -8,11 +8,11 @@ Gyroscope::Gyroscope() {
 	MODE_80 = 0x04;
 	MODE_20 = 0x06;
 	INT_DIS = 0x01;
-	countsToDps = 1/1.33f*0.75;
+	countsToDps = 0.75;
 	XOffset = 0;
 	YOffset = 0;
 	ZOffset = 0;
-	countsToRps = 1/1.33f * 0.75 * 0.0174533;
+	countsToRps = 0.75 * 0.0174533;
 }
 
 void Gyroscope::initialize() {
