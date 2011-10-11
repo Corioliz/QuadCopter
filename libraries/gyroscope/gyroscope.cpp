@@ -3,6 +3,7 @@
 //VTI Technologies - CMR3000-DOX Gyroscope
 //I2C Communication
 Gyroscope::Gyroscope() {
+
 	ADDR = 0x1E; //Device address (MISO pin state = LOW)
 	ADDR_LSB_PIN = 31; //Arduino Pin for MISO state
 	
@@ -13,11 +14,25 @@ Gyroscope::Gyroscope() {
 	MODE_20 = 0x06; //Measurement, BW = 80 Hz
 	INT_DIS = 0x01; //Interrupt disabled
 	
-	countsToDps = 1/1.33f*0.75; //Data to degrees per second
+	countsToDps = 0.75; //Data to degrees per second
 	XOffset = 0; //Offset for X axis
 	YOffset = 0; //Offset for Y axis
 	ZOffset = 0; //Offset for Z axis
-	countsToRps = 1/1.33f * 0.75 * 0.0174533; //Data to radians per second
+	countsToRps = 0.75 * 0.0174533; //Data to radians per second
+
+	ADDR = 0x1E;
+	ADDR_LSB_PIN = 31;
+	RESET = 0x80;
+	CTRL = 0x02;
+	MODE_80 = 0x04;
+	MODE_20 = 0x06;
+	INT_DIS = 0x01;
+	countsToDps = 0.75;
+	XOffset = 0;
+	YOffset = 0;
+	ZOffset = 0;
+	countsToRps = 0.75 * 0.0174533;
+
 }
 
 //Initialize Gyroscope measurement

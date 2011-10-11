@@ -25,8 +25,7 @@ void IMU::initialize() {
 }
 
 void IMU::complementaryFilter(float* vec) {
-	unsigned long currentMillis;
-	unsigned long interval;
+	unsigned long currentMillis = millis();
 	// Step 1: Read sensor values
 	accelerometer.getData(acc);
 	acc[2] *= -1; // Invert acc z-axis so the vector now points up
