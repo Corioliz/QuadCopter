@@ -13,6 +13,27 @@ IMU::IMU(float wGyro) {
 void IMU::initialize() {
 	gyroscope.initialize();
 	accelerometer.initialize();
+	lastMillis = millis();
+}
+
+void IMU::complementaryFilter(float* vec) {
+	unsigned long currentMillis;
+	unsigned long interval;
+	// Step 1: Read sensor values
+	accelerometer.getData(acc);
+	acc[2] *= -1; // Invert acc z-axis so the vector now points up
+	gyroscope.getData(rates);
+	// Calculate time interval (maybe this should actually be fixed?)
+	dT = (currentMillis - lastMillis) * 0.001f;
+	lastMillis = currentMillis;
+	// Step 2: Calculate pitch and roll angles from accelerometer readings
+	float pitchAcc; // TODO
+	float rollAcc; // TODO
+	// Step 3: filtering
+	vec[0] = wGyro * (vec[0] + rates[0]*dT) + wAcc * pitchAcc;
+	vec[1] = wGyro * (vec[1] + rates[1]*dT) + wAcc * rollAcc;
+	vec[2] = (vec[2] + rates[2]*dT); // Yaw update based only on gyro
+	
 }
 
 void IMU::getAttitude(float* vec) {
