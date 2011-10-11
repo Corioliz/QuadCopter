@@ -37,7 +37,7 @@ class IMU
 				
 	public:
 		void complementaryFilter(float* vec);
-		IMU(float wGyro);
+		IMU(float wGyro, float wAcc);
 		void initialize();
 		void getAttitude(float* vec);
 };
