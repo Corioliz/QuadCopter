@@ -20,6 +20,7 @@ class IMU
 		float rates[3];
 		
 		float wGyro;
+		float wAcc;
 		
 		float Axz;
 		float Ayz;
@@ -35,8 +36,9 @@ class IMU
 		float square(float num);
 				
 	public:
-		IMU(float wGyro);
-		void initialize();		
+		void complementaryFilter(float* vec);
+		IMU(float wGyro, float wAcc);
+		void initialize();
 		void getAttitude(float* vec);
 };
 
