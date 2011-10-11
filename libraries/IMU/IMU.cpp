@@ -30,7 +30,7 @@ void IMU::complementaryFilter(float* vec) {
 	// Step 1: Read sensor values
 	accelerometer.getData(acc);
 	acc[2] *= -1; // Invert acc z-axis so the vector now points up
-	gyroscope.getData(rates);
+	gyroscope.getSIData(rates);
 	// Calculate time interval (maybe this should actually be fixed?)
 	dT = (currentMillis - lastMillis) * 0.001f;
 	lastMillis = currentMillis;
