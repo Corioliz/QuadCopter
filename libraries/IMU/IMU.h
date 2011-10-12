@@ -29,7 +29,7 @@ class IMU
 		float degToRad;
 		
 		unsigned long lastMillis;
-		unsigned long dT;
+		float dT;
 		char firstRound;
 		
 		void normalize(float* vec);
@@ -40,6 +40,7 @@ class IMU
 		IMU(float wGyro, float wAcc);
 		void initialize();
 		void getAttitude(float* vec);
+		void getRates(float* Rates);
 };
 
 #endif
