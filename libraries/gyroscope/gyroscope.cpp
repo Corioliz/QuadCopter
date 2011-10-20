@@ -10,8 +10,8 @@ Gyroscope::Gyroscope() {
 	CTRL = 0x02; //Register address for Control register
 	//CTRL register modes
 	RESET = 0x80; //Reset device
-	MODE_80 = 0x04; //Measurement, BW = 80 Hz
-	MODE_20 = 0x06; //Measurement, BW = 80 Hz
+	MODE_20 = 0x04; //Measurement, BW = 20 Hz
+	MODE_80 = 0x06; //Measurement, BW = 80 Hz
 	INT_DIS = 0x01; //Interrupt disabled
 	
 	countsToDps = 0.75; //Data to degrees per second
