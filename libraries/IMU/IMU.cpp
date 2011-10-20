@@ -142,6 +142,13 @@ void IMU::normalize(float* vec) {
 	vec[2] /= length;
 }
 
+void IMU::getRates(float* Rates) {
+	//Rates = rates;
+	Rates[0] = rates[0];
+	Rates[1] = rates[1];
+	Rates[2] = rates[2];
+}
+
 float IMU::square(float num) {
 	return num*num;
 }
