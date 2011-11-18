@@ -4,14 +4,14 @@
 //I2C Communication
 Gyroscope::Gyroscope() {
 
-	ADDR = 0x1E; //Device address (MISO pin state = LOW)
-	ADDR_LSB_PIN = 31; //Arduino Pin for MISO state
+	ADDR = 0x1F; //Device address (MISO pin state = LOW : 0x1E, HIGH : 0x1F)
+	ADDR_LSB_PIN = 25; //Arduino Pin for MISO state
 	
 	CTRL = 0x02; //Register address for Control register
 	//CTRL register modes
 	RESET = 0x80; //Reset device
-	MODE_20 = 0x04; //Measurement, BW = 20 Hz
 	MODE_80 = 0x06; //Measurement, BW = 80 Hz
+	MODE_20 = 0x04; //Measurement, BW = 20 Hz
 	INT_DIS = 0x01; //Interrupt disabled
 	
 	countsToDps = 0.75; //Data to degrees per second
@@ -24,14 +24,41 @@ Gyroscope::Gyroscope() {
 
 //Initialize Gyroscope measurement
 void Gyroscope::initialize() {
-	digitalWrite(ADDR_LSB_PIN, LOW); //MISO state is LOW
+	pinMode(ADDR_LSB_PIN, OUTPUT); //MISO Pin as OUTPUT (5V)
+	digitalWrite(ADDR_LSB_PIN, HIGH); //MISO state / DEVICE ADDRESS is LOW : 0x1E / HIGH : 0x1F 
+	delay(200);
 	cmr_write(CTRL, RESET); //Control = Reset
-	delay(2);
+	delay(200);
 	
 	cmr_write(CTRL, MODE_20 | INT_DIS); //Control = Measurement 20Hz and Interrupt disabled
-	delay(2000);
+	delay(1000);
+	
+	/*
+	cmr_read(0x02);
+	while( res == 0x00 ) {
+		Serial.println("Init again");
+		cmr_write(CTRL, MODE_20 | INT_DIS); //Control = Measurement 20Hz and Interrupt disabled
+		delay(3000);
+	}
+	*/
+	
 	calibrate(); //Calibrate X, Y and Z Offsets
 	
+	cmr_read(0x00);
+	Serial.println(res,BIN);
+	delay(20);
+	cmr_read(0x01);
+	Serial.println(res,BIN);
+	delay(20);
+	cmr_read(0x02);
+	Serial.println(res,BIN);
+	delay(20);
+	cmr_read(0x03);
+	Serial.println(res,BIN);
+	delay(20);
+	cmr_read(0x22);
+	Serial.println(res,BIN);
+	delay(20);
 }
 
 //Get data in degrees per seconds to rate vector [x,y,z]
@@ -54,12 +81,13 @@ void Gyroscope::getSIData(float* rate) {
 //Calibrate X, Y and Z offsets
 void Gyroscope::calibrate() {
 	//Calculate mean of 100 measurements in stable position
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 1000; i++) {
 		cmr_read_rates(); //Read raw data
-		XOffset += parseRawData(rawX) * 0.01f;
-		YOffset += parseRawData(rawY) * 0.01f;
-		ZOffset += parseRawData(rawZ) * 0.01f;
+		XOffset += parseRawData(rawX) * 0.001f;
+		YOffset += parseRawData(rawY) * 0.001f;
+		ZOffset += parseRawData(rawZ) * 0.001f;
 	}
+	Serial.print(XOffset); Serial.print(","); Serial.print(YOffset); Serial.print(","); Serial.println(ZOffset);
 }
 
 //Write 8bit data to register with 8bit address
@@ -100,7 +128,7 @@ void Gyroscope::cmr_read_rates() {
 }
 
 //Convert raw data binary value to decimal
-short Gyroscope::parseRawData(unsigned short rawReading) {
+float Gyroscope::parseRawData(unsigned short rawReading) {
 	short base = (rawReading >> 1) & 0x1FFF; // 12 bit data + sign bit
 	if (base & 0x1000) { // Read sign bit and act accordingly
 	// Negative number, take XOR for 12 least significant bits and add one

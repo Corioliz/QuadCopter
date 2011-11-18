@@ -26,7 +26,7 @@ class Gyroscope
 		void cmr_write(byte address, byte data); //Write data to address
 		void cmr_read(byte address); //Read address to res
 		void cmr_read_rates(); //Read raw data (rawX, rawY and rawZ)
-		short parseRawData(unsigned short rawReading); //Convert raw data binary value to decimal
+		float parseRawData(unsigned short rawReading); //Convert raw data binary value to decimal
 		
 	public:
 		Gyroscope(); //Constructor

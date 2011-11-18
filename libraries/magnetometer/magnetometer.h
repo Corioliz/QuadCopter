@@ -22,7 +22,7 @@ class Magnetometer
 		byte SET_CONFB;
 		byte SET_MODE;
 		
-		unsigned short magX;
+		unsigned short magX, magY, magZ;
 		
 		char res; //Result from Read
 		
@@ -30,7 +30,7 @@ class Magnetometer
 		void hmc_write(byte address, byte data);
 		void hmc_read(byte address);
 		void hmc_read_rates();
-		
+		float parseRawData(unsigned short rawReading);
 		
 	public:
 		Magnetometer(); //Constructor

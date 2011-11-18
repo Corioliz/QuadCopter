@@ -13,7 +13,7 @@ Accelerometer::Accelerometer() {
 //Initialize Acceleromter
 void Accelerometer::initialize() {
 	sca_write(SCAMODE, 0x80); // Select operation mode / Output ring buffer enabled , others are initial values
-	sca_read(SCAMODE); //Read operation mode ?
+	//sca_read(SCAMODE); //Read operation mode ?
 }
 
 //Get data as ? to acc vector
