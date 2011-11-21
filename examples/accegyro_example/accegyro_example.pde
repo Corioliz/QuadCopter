@@ -44,21 +44,20 @@ void loop() {
   //Serial.println("Acce data");
   acce.getData(acc);
   delay(2);
+  Serial.print(acc[0]); Serial.print(",");
+  Serial.print(acc[1]); Serial.print(",");
+  Serial.print(acc[2]); Serial.print(",");
   
   //Serial.println("Acce data");
   gyro.getSIData(rate);
   delay(2);
+  Serial.print(rate[0]); Serial.print(",");
+  Serial.print(rate[1]); Serial.print(",");
+  Serial.print(rate[2]); Serial.print(",");
   
   //Serial.println("Magneto data");
   magneto.getData(magval);
   delay(2);
-  
-  Serial.print(acc[0]); Serial.print(",");
-  Serial.print(acc[1]); Serial.print(",");
-  Serial.print(acc[2]); Serial.print(",");
-  Serial.print(rate[0]); Serial.print(",");
-  Serial.print(rate[1]); Serial.print(",");
-  Serial.print(rate[2]); Serial.print(",");
   Serial.print(magval[0]); Serial.print(",");
   Serial.print(magval[1]); Serial.print(",");
   Serial.print(magval[2]); Serial.println("");

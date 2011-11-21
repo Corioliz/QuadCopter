@@ -1,10 +1,11 @@
 #include "IMU.H"
 
-IMU::IMU(float wGyro, float wAcc) {
+IMU::IMU(float wAcc, float wMag) {
 	// wGyro and wAcc must sum up to 1
-	float wSum = wGyro + wAcc;
-	IMU::wGyro = wGyro/wSum;
-	IMU::wAcc = wAcc/wSum;
+	IMU::wAcc = wAcc;
+	IMU::wMag = wMag;
+	IMU::wGyroAcc = 1-wAcc;
+	IMU::wGyroMag = 1-wMag;
 	
 	// flag for getAttitude function
 	firstRound = 1;
@@ -28,25 +29,35 @@ void IMU::complementaryFilter(float* vec) {
 	unsigned long currentMillis = millis();
 	// Step 1: Read sensor values
 	accelerometer.getData(acc);
-	acc[2] *= -1; // Invert acc z-axis so the vector now points up
+	//acc[2] *= -1; // Invert acc z-axis so the vector now points up
 	gyroscope.getSIData(rates);
-	// Calculate time interval (maybe this should actually be fixed?)
+	magneto.getData(mag);
+	
+	// Step 1.5: Calculate time interval (maybe this should actually be fixed?)
 	dT = (currentMillis - lastMillis) * 0.001f;
 	lastMillis = currentMillis;
-	// Step 2: Calculate pitch and roll angles from accelerometer readings
+	// Step 2a: Calculate pitch and roll angles from accelerometer readings
 	float R = 1.0/sqrt(square(acc[0])+square(acc[1])+square(acc[2])); // Accelerometer vector length inverse
 	float pitchAcc = acos(acc[1]*R); // Rotation around y-axis
 	float rollAcc = acos(acc[0]*R); // Rotation around x-axis
 
 	// Step 3: filtering
-	vec[0] = wGyro * (vec[0] + rates[0]*dT) + wAcc * pitchAcc; // pitch
-	vec[1] = wGyro * (vec[1] + rates[1]*dT) + wAcc * rollAcc; // roll
-	vec[2] = (vec[2] + rates[2]*dT); // Yaw update based only on gyro
+	vec[0] = wGyroAcc * (vec[0] + rates[0]*dT) + wAcc * pitchAcc; // pitch
+	vec[1] = wGyroAcc * (vec[1] + rates[1]*dT) + wAcc * rollAcc; // roll
+	
+	// Tilt compensation for compass
+	float sT = sin(vec[1]);
+	float cT = cos(vec[1]);
+	float sP = sin(vec[0]);
+	float cP = cos(vec[0]);
+	float yawMag = atan2(mag[2]*sP+mag[0]*cP, -mag[1]*cT-mag[0]*sT*sP+mag[2]*sT*cP);
+	// Yaw update based only on gyro
+	vec[2] = wGyroMag * (vec[2] + rates[2]*dT) + wMag * yawMag;
 	
 }
 
 void IMU::getAttitude(float* vec) {
-	unsigned long currentMillis;
+	/*unsigned long currentMillis;
 	unsigned long interval;
 	float tmp;
 	
@@ -95,6 +106,7 @@ void IMU::getAttitude(float* vec) {
 		vec[0] = attitude[0];
 		vec[1] = attitude[1];
 		vec[2] = attitude[2];	
+		return;
 	}
 	
 	/*	
