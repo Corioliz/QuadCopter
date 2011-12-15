@@ -18,6 +18,8 @@ class IMU
 		float attAcc[3];
 		float attGyro[3];
 		
+		float c_alpha;
+		float s_alpha;
 		
 		float acc[3];
 		float rates[3];
@@ -47,6 +49,8 @@ class IMU
 		void initialize();
 		void getAttitude(float* vec);
 		void getRates(float* Rates);
+		void getAccs(float* Accs);
+		void getMags(float* Mags);
 };
 
 #endif

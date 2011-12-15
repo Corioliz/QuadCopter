@@ -4,7 +4,7 @@
 //I2C Communication
 Gyroscope::Gyroscope() {
 
-	ADDR = 0x1F; //Device address (MISO pin state = LOW : 0x1E, HIGH : 0x1F)
+	ADDR = 0x1E; //Device address (MISO pin state = LOW : 0x1E, HIGH : 0x1F)
 	ADDR_LSB_PIN = 25; //Arduino Pin for MISO state
 	
 	CTRL = 0x02; //Register address for Control register
@@ -28,9 +28,11 @@ void Gyroscope::initialize() {
 	digitalWrite(ADDR_LSB_PIN, HIGH); //MISO state / DEVICE ADDRESS is LOW : 0x1E / HIGH : 0x1F 
 	delay(200);
 	cmr_write(CTRL, RESET); //Control = Reset
+	Serial.println("Eka write");
 	delay(200);
 	
 	cmr_write(CTRL, MODE_20 | INT_DIS); //Control = Measurement 20Hz and Interrupt disabled
+	Serial.println("Toka write");
 	delay(1000);
 	
 	/*
@@ -41,6 +43,8 @@ void Gyroscope::initialize() {
 		delay(3000);
 	}
 	*/
+	
+	ADDR = 0x1F; //Swap address because of Gyro bug
 	
 	calibrate(); //Calibrate X, Y and Z Offsets
 	

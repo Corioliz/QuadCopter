@@ -1,4 +1,4 @@
-﻿#ifndef PID_h
+#ifndef PID_h
 #define PID_h
 
 #include <stdlib.h>
@@ -22,12 +22,12 @@ class PID {
 
 	float calculate(float ref, float input) {
 		// Calculate sampling time
-		long dt = 0.001 * (millis() - prevTime); // Convert to seconds
-
+		long dt = (millis() - prevTime); // Convert to seconds
+		float dt_float = dt * 0.001 ;
 		
 		float error = ref - input;
 		pTerm = Kp * (ref - input);
-		dTerm = -Kd * (input - prevInput)/dt; // dError/dt = - dInput/dt
+		dTerm = -Kd * (input - prevInput)/dt_float; // dError/dt = - dInput/dt
 		iTerm += Ki * error * dt;
 		
 		// Calculate control
@@ -37,9 +37,11 @@ class PID {
 		if (output > maxLimit) {
 			iTerm -= output - maxLimit;
 			output = maxLimit;
-		} else {
+		} else if ( output < minLimit ){
 			iTerm += minLimit - output;
 			output = minLimit;
+		} else {
+			//output is output
 		}
 		
 		// Update state
@@ -61,3 +63,5 @@ class PID {
 	float maxLimit;
 	float Kp, Ki, Kd;
 };
+
+#endif

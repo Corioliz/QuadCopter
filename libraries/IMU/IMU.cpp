@@ -17,11 +17,17 @@ IMU::IMU(float wAcc, float wMag) {
 	// sensor objects
 	gyroscope = Gyroscope();
 	accelerometer = Accelerometer();
+	magneto = Magnetometer();
+	
+	//Magnet field inclination Cos and Sin for alpha = 73 degrees
+	c_alpha = 0.29237;
+	s_alpha = 0.95630;
 }
 
 void IMU::initialize() {
 	gyroscope.initialize();
 	accelerometer.initialize();
+	magneto.initialize();
 	lastMillis = millis();
 }
 
@@ -29,30 +35,135 @@ void IMU::complementaryFilter(float* vec) {
 	unsigned long currentMillis = millis();
 	// Step 1: Read sensor values
 	accelerometer.getData(acc);
+	delay(2);
 	//acc[2] *= -1; // Invert acc z-axis so the vector now points up
 	gyroscope.getSIData(rates);
+	delay(2);
 	magneto.getData(mag);
+	delay(2);
+	//acc[2] *= -1;
+	normalize(acc);
+	
+	//acc[0] = -acc[0];
+	//acc[1] = -acc[1];
+	
+	//Magnetometer offsets
+	mag[0] = -(mag[0] + 50); //Invert x-axis
+	mag[1] = -(mag[1] + 20); //Invert y-axis
+	mag[2] = mag[2] + 50;
+	//Normalize magnetometer
+	normalize(mag);
 	
 	// Step 1.5: Calculate time interval (maybe this should actually be fixed?)
 	dT = (currentMillis - lastMillis) * 0.001f;
 	lastMillis = currentMillis;
 	// Step 2a: Calculate pitch and roll angles from accelerometer readings
 	float R = 1.0/sqrt(square(acc[0])+square(acc[1])+square(acc[2])); // Accelerometer vector length inverse
-	float pitchAcc = acos(acc[1]*R); // Rotation around y-axis
-	float rollAcc = acos(acc[0]*R); // Rotation around x-axis
-
-	// Step 3: filtering
-	vec[0] = wGyroAcc * (vec[0] + rates[0]*dT) + wAcc * pitchAcc; // pitch
-	vec[1] = wGyroAcc * (vec[1] + rates[1]*dT) + wAcc * rollAcc; // roll
+	//float pitchAcc = acos(acc[1]*R); // Rotation around y-axis
+	//float rollAcc = acos(acc[0]*R); // Rotation around x-axis
 	
-	// Tilt compensation for compass
+	float pitchAcc = asin( acc[1] * R );
+	float rollAcc = atan2( acc[0] , acc[2] );
+	//float rollAcc = atan( acc[0] / acc[2] );
+	
+	//YPR alternative
+	//float rollAcc = atan2( -acc[2] , acc[1] );
+	
+	// Step 3: filtering
+	vec[0] = wGyroAcc * (vec[0] + rates[0]*dT) + wAcc * rollAcc; // roll (phi)
+	
+	vec[1] = wGyroAcc * (vec[1] + rates[1]*dT) + wAcc * pitchAcc; // pitch (theta)
+	
 	float sT = sin(vec[1]);
 	float cT = cos(vec[1]);
 	float sP = sin(vec[0]);
 	float cP = cos(vec[0]);
-	float yawMag = atan2(mag[2]*sP+mag[0]*cP, -mag[1]*cT-mag[0]*sT*sP+mag[2]*sT*cP);
+	
+	float apuA = - cP * mag[1] + sP * mag[2] ;
+	float apuB = cT * mag[0] + sT * sP * mag[1] + sT * cP * mag[2] ;
+	
+	float yawMag = atan2( apuA , apuB );
+	//float yawMag = atan( apuA / apuB );
+	
+	//float cos_che = cos(yawMag) * apuB + sin(yawMag) * apuA ;
+	//Serial.println(cos_che);
+	
+	//vec[0] = vec[0];
+	
+	/*
+	float sP = sin(vec[0]);
+	float cP = cos(vec[0]);
+	
+	float pitchAcc = acos( acc[1] / sP );
+	
+	vec[1] = wGyroAcc * (vec[1] + rates[1]*dT) + wAcc * pitchAcc; // pitch
+	
+	vec[1] = vec[1] + PI/2;
+	
+	float sT = sin(vec[1]);
+	float cT = cos(vec[1]);
+	
+	float apuA = sP * sT * c_alpha;
+	float apuB = cP * c_alpha;
+	float apuC = sP * cT * s_alpha;
+	float apuD = cP * cT * s_alpha;
+	float apuE = cP * sT * c_alpha;
+	float apuF = sP * c_alpha;
+	
+	float yawMag = asin( (apuA*(-mag[2] - apuD) - apuE*(-mag[1] - apuC) )/(apuB * apuE + apuA * apuF) );
+	*/
+	
+	// Tilt compensation for compass
+	/*
+	float sT = sin(vec[0] - PI*0.5);
+	float cT = cos(vec[0]  - PI*0.5);
+	float sP = sin(vec[1]  - PI*0.5);
+	float cP = cos(vec[1] - PI*0.5);
+	//
+	float sT = sin(vec[0]);
+	float cT = cos(vec[0]);
+	float sP = sin(-vec[1]);
+	float cP = cos(-vec[1]);
+	*/
+	//float yawMag = atan2(mag[2]*sP+mag[0]*cP, -mag[1]*cT-mag[0]*sT*sP+mag[2]*sT*cP);
+	//float yawMag = - atan2( mag[1] * cT * sP + mag[2] * sT , mag[0] * cP + mag[1] * sT * sP - mag[2] * cT * sP );
+	
+	//float X_H = - mag[1] * cP - mag[0] * sT * sP + mag[2] * cT * sP ;
+	//float Y_H = - mag[0] * cT - mag[2]*sT ;
+	
+	//float yawMag = - atan2( Y_H , X_H );
+	//float yawMag = - atan2( -mag[0] * cT + mag[2]*sT , - mag[1] * cT * sP - mag[0] * sT * sP - mag[2] * cT * sP );
+	
+	/*
+	if ( X_H < 0 ) {
+	
+		yawMag = PI - yawMag;
+		
+	} else if ( X_H > 0 ) {
+		
+		if( Y_H < 0) {
+			yawMag = - yawMag;
+		} else {
+			yawMag = 2*PI - yawMag;
+		}
+		
+	} else {
+		
+		if( Y_H < 0) {
+			yawMag = 0.5 * PI;
+		} else {
+			yawMag = 1.5 * PI;
+		}
+		
+	}
+	*/
 	// Yaw update based only on gyro
 	vec[2] = wGyroMag * (vec[2] + rates[2]*dT) + wMag * yawMag;
+	
+	//Gyro - angular velocities
+	vec[3] = rates[0] ;
+	vec[4] = rates[1] ;
+	vec[5] = rates[2] ;
 	
 }
 
@@ -159,6 +270,20 @@ void IMU::getRates(float* Rates) {
 	Rates[0] = rates[0];
 	Rates[1] = rates[1];
 	Rates[2] = rates[2];
+}
+
+void IMU::getAccs(float* Accs) {
+	//Rates = rates;
+	Accs[0] = acc[0];
+	Accs[1] = acc[1];
+	Accs[2] = acc[2];
+}
+
+void IMU::getMags(float* Mags) {
+	//Rates = rates;
+	Mags[0] = mag[0];
+	Mags[1] = mag[1];
+	Mags[2] = mag[2];
 }
 
 float IMU::square(float num) {

@@ -16,6 +16,9 @@ Magnetometer::Magnetometer() {
 	SET_CONFA = 0b00010000;
 	SET_CONFB = 0b00100000;
 	SET_MODE = 0b00000000;
+	
+	
+	
 }
 
 //Initialize Magnetometer measurement
@@ -57,7 +60,7 @@ void Magnetometer::testDevice(){
 }
 
 void Magnetometer::hmc_read_rates() {
-	// Read order X Y Z, (MSB, LSB)
+	// Read order Z_MSB, Z_LSB, Y_MSB, Y_LSB, X_MSB and X_LSB
 	i2c_start_wait( (ADDR << 1) | I2C_WRITE ); // Start write
 	i2c_write(REG_DATA_X_MSB); // X_MSB register address
 	i2c_rep_start( (ADDR << 1) | I2C_READ ); // Start reading
