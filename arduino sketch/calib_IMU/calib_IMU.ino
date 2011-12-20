@@ -36,9 +36,9 @@ Servo esc2; //Pin 12
 Servo esc3; //Pin 13
 
 //PID -      P, I, D,   ref, in, maxCtrl, minCtrl
-PID pid_phi( 100, 0.0, 0.0,   0, 0,  2000, -2000 ); //PID for Phi / roll ?
-PID pid_theta( 100, 0.0, 0.0, 0, 0,  2000, -2000); //PID for Theta / pitch ?
-PID pid_psi( 50, 0.5, 0.0, 0, 0,  2000, -2000 ); //PID for Psi d_body
+PID pid_phi( 50, 0.0, 10.0,   0, 0,  2000, -2000 ); //PID for Phi / roll ?
+PID pid_theta( 50, 0.0, 10.0, 0, 0,  2000, -2000); //PID for Theta / pitch ?
+PID pid_psi( 0, 0.0, 0.0, 0, 0,  2000, -2000 ); //PID for Psi d_body
 
 //Calculation values
 float vec[6] = {
@@ -57,8 +57,8 @@ float pidvalues[3] = {
 float pidthrust = 1; //Thrust level
 
 //Ratios for Receiver values to PID Reference
-float phi_ratio = 2*0.17453; //20 degrees as rads
-float theta_ratio = 2*0.17453; //20 degrees as rads
+float phi_ratio = 1; //2*0.17453; //20 degrees as rads
+float theta_ratio = 1; //2*0.17453; //20 degrees as rads
 float psi_ratio = 1; // ???
 float thrust_ratio = 1000;
 
@@ -159,7 +159,7 @@ void loop() {
   //   Serial.print(",");
 
   //  //Read receiver values
-   receiver.read(recvec); //Psi_b_d, Thrust, Theta, Phi, Cycle 1, Cycle 2
+  receiver.read(recvec); //Psi_b_d, Thrust, Theta, Phi, Cycle 1, Cycle 2
   // Thrust [0 1]
   // Psi_b_d [-1 1]
   // Theta [-1 1]
@@ -179,8 +179,8 @@ void loop() {
 //  recvec[1] = 0.5;
 //  recvec[2] = 0;
 //  recvec[3] = 0;
-//  recvec[4] = 1600;
-//  recvec[5] = 1600;
+//  recvec[4] = 1950;
+//  recvec[5] = 1950;
   
   //Calculate reference values and thrust value
   pidthrust = thrust_ratio * recvec[1] + 1000; //Value between 1000 and 2000
@@ -189,8 +189,8 @@ void loop() {
   pidref[2] = psi_ratio * recvec[0];
 
   //PID : calculate - ref , input
-  pidvalues[0] = pid_phi.calculate( pidref[0] , vec[0] ); //Phi
-  pidvalues[1] = pid_theta.calculate( pidref[1] , vec[1] ); //Theta
+  pidvalues[0] = pid_phi.calculate( pidref[0] , vec[3] ); //Phi
+  pidvalues[1] = pid_theta.calculate( pidref[1] , vec[4] ); //Theta
   pidvalues[2] = pid_psi.calculate( pidref[2] , vec[5] ); //Psi
 
   //Motors : calculate motor values
@@ -208,8 +208,8 @@ void loop() {
 
   // Check motor values
   for(int i=0; i < 4; i++){
-    if(motorvalues[i] > 2000){
-      motorvalues[i] = 2000; //Max value is 2000
+    if(motorvalues[i] > 1700){
+      motorvalues[i] = 1700; //Max value is 2000
     } 
     
     if( recvec[4] < 1900 || recvec[5] < 1900 || motorvalues [i] < 1000){
@@ -223,6 +223,6 @@ void loop() {
   esc1.writeMicroseconds(motorvalues[1]); //Index 1
   esc2.writeMicroseconds(motorvalues[2]); //Index 2
   esc3.writeMicroseconds(motorvalues[3]); //Index 3
-  Serial.println(millis()-looptime);
+  //Serial.println(millis()-looptime);
 }
 
