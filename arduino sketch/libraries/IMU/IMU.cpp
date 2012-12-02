@@ -42,6 +42,7 @@ void IMU::complementaryFilter(float* vec) {
 	magneto.getData(mag);
 	delay(2);
 	//acc[2] *= -1;
+	
 	normalize(acc);
 	
 	//acc[0] = -acc[0];
@@ -71,7 +72,6 @@ void IMU::complementaryFilter(float* vec) {
 	
 	// Step 3: filtering
 	vec[0] = wGyroAcc * (vec[0] + rates[0]*dT) + wAcc * rollAcc; // roll (phi)
-	
 	vec[1] = wGyroAcc * (vec[1] + rates[1]*dT) + wAcc * pitchAcc; // pitch (theta)
 	
 	float sT = sin(vec[1]);
@@ -161,9 +161,12 @@ void IMU::complementaryFilter(float* vec) {
 	vec[2] = wGyroMag * (vec[2] + rates[2]*dT) + wMag * yawMag;
 	
 	//Gyro - angular velocities
-	vec[3] = rates[0] ;
-	vec[4] = rates[1] ;
-	vec[5] = rates[2] ;
+	// vec[3] = rates[0] ;
+	// vec[4] = rates[1] ;
+	float lpCoeff = 0.5;
+	vec[3] = (1-lpCoeff)*vec[3] + lpCoeff*rates[0];
+	vec[4] = (1-lpCoeff)*vec[4] + lpCoeff*rates[1];
+	vec[5] = (1-lpCoeff)*vec[5] + lpCoeff*rates[2];
 	
 }
 

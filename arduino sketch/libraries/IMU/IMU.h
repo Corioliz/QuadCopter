@@ -1,7 +1,12 @@
 #ifndef IMU_h
 #define IMU_h
 
-#include "Wprogram.h"
+#if defined(ARDUINO) && ARDUINO >= 100
+  #include "Arduino.h"
+  #else
+  #include "WProgram.h"
+#endif
+
 #include "i2cmaster.h"
 #include "gyroscope.h"
 #include "accelerometer.h"

@@ -1,7 +1,12 @@
 #ifndef Accelerometer_h
 #define Accelerometer_h
 
-#include "Wprogram.h"
+#if defined(ARDUINO) && ARDUINO >= 100
+  #include "Arduino.h"
+  #else
+  #include "WProgram.h"
+#endif
+  
 #include "i2cmaster.h"
 
 //VTI Technologies - SCA3000-EO2 Accelerometer
