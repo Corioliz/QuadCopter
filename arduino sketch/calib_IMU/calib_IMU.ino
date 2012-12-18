@@ -6,7 +6,6 @@
 // ifdef for disabling debug functionality
 // live tuning via serial
 
-
 // --- Libraries ---
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
@@ -23,6 +22,15 @@
 #include "receiver.h"
 #include "i2cmaster.h"
 
+#define DEBUG // Comment this out to disable debug prints
+
+#ifdef DEBUG
+	#define DEBUG_PRINT(x)	  Serial.print (x)
+	#define DEBUG_PRINTLN(x)  Serial.println(x)
+#else
+	#define DEBUG_PRINT(x)
+	#define DEBUG_PRINTLN(x)
+#endif
 // --- Constructors --- --- --- --- ---
 
 //IMU - wAcc , wMag
@@ -166,16 +174,16 @@ void loop() {
   //Print measurements
 //     for(int i=0; i < 3; i++)
 //     {
-//     Serial.print(vec[i]);
-//     Serial.print(",");
+//     DEBUG_PRINT(vec[i]);
+//     DEBUG_PRINT(",");
 //     }
 //     
-//     Serial.print(vec[3]);
-//     Serial.print(",");
-//     Serial.print(vec[4]);
-//     Serial.print(",");
-//     Serial.print(vec[5]);
-//     Serial.print(",");
+//     DEBUG_PRINT(vec[3]);
+//     DEBUG_PRINT(",");
+//     DEBUG_PRINT(vec[4]);
+//     DEBUG_PRINT(",");
+//     DEBUG_PRINT(vec[5]);
+//     DEBUG_PRINT(",");
 
   //  //Read receiver values
   receiver.read(recvec); //Psi_b_d, Thrust, Theta, Phi, Cycle 1, Cycle 2
@@ -191,8 +199,8 @@ void loop() {
   
   // Print receiver values
   for (int i = 0; i < 6; i++) {
-    Serial.print(recvec[i]);
-    Serial.print(',');
+    DEBUG_PRINT(recvec[i]);
+    DEBUG_PRINT(',');
   }
  
   // Override receiver for testing
@@ -216,7 +224,7 @@ void loop() {
   pidvalues[1] = pid_theta.calculate( pidref[1], vec[1] ); // pitch angle
   pidvalues[0] = pid_thetaDot.calculate( pidvalues[1] , vec[4] ); // roll velocity
   
-  pidvalues[2] = pid_psi( pidref[2], vec[3] ); // yaw angle
+  pidvalues[2] = pid_psi.calculate( pidref[2], vec[2] ); // yaw angle
 
   //Motors : calculate motor values
   // X style : Index : 0. left front, 1. right front, 2. right rear, 3. left rear
@@ -240,10 +248,10 @@ void loop() {
     if( recvec[4] < 1900 || recvec[5] < 1900 || motorvalues [i] < 1000){
       motorvalues[i] = 1000; //Min value is 1000
     }
-    Serial.print(motorvalues[i]);
-    Serial.print(",");
+    DEBUG_PRINT(motorvalues[i]);
+    DEBUG_PRINT(",");
   }
-  //Serial.println("0");
+  //DEBUG_PRINTLN("0");
   
     //Set motor values
   esc0.writeMicroseconds(motorvalues[0]); //Index 0
@@ -251,6 +259,6 @@ void loop() {
   esc2.writeMicroseconds(motorvalues[2]); //Index 2
   esc3.writeMicroseconds(motorvalues[3]); //Index 3
   
-  Serial.println(millis()-looptime);
+  DEBUG_PRINTLN(millis()-looptime);
 }
 
