@@ -23,12 +23,14 @@ Magnetometer::Magnetometer() {
 
 //Initialize Magnetometer measurement
 void Magnetometer::initialize() {
+	Serial.println("[MAG] Initializing...");
 	hmc_write(REG_CONFA,SET_CONFA);
 	delay(10);
 	hmc_write(REG_CONFB,SET_CONFB);
 	delay(10);
 	hmc_write(REG_MODE,SET_MODE);
 	delay(200);
+	Serial.println("[MAG] Initialization complete!");
 	
 }
 

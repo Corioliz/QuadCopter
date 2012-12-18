@@ -25,14 +25,12 @@ Gyroscope::Gyroscope() {
 //Initialize Gyroscope measurement
 void Gyroscope::initialize() {
 	pinMode(ADDR_LSB_PIN, OUTPUT); //MISO Pin as OUTPUT (5V)
-	digitalWrite(ADDR_LSB_PIN, HIGH); //MISO state / DEVICE ADDRESS is LOW : 0x1E / HIGH : 0x1F 
+	Serial.println("[GYRO] Initializing...");
+	digitalWrite(ADDR_LSB_PIN, LOW); //MISO state / DEVICE ADDRESS is LOW : 0x1E / HIGH : 0x1F
 	delay(200);
 	cmr_write(CTRL, RESET); //Control = Reset
-	Serial.println("Eka write");
 	delay(200);
-	
 	cmr_write(CTRL, MODE_20 | INT_DIS); //Control = Measurement 20Hz and Interrupt disabled
-	Serial.println("Toka write");
 	delay(1000);
 	
 	/*
@@ -44,10 +42,12 @@ void Gyroscope::initialize() {
 	}
 	*/
 	
-	ADDR = 0x1F; //Swap address because of Gyro bug
-	
+	ADDR = 0x1E; //Swap address because of Gyro bug
+	//digitalWrite(ADDR_LSB_PIN, HIGH);
+	Serial.println("[GYRO] Calibrating...");
 	calibrate(); //Calibrate X, Y and Z Offsets
 	
+	/*
 	cmr_read(0x00);
 	Serial.println(res,BIN);
 	delay(20);
@@ -63,6 +63,9 @@ void Gyroscope::initialize() {
 	cmr_read(0x22);
 	Serial.println(res,BIN);
 	delay(20);
+	*/
+	
+	Serial.println("[GYRO] Initialization complete!");
 }
 
 //Get data in degrees per seconds to rate vector [x,y,z]
@@ -84,12 +87,13 @@ void Gyroscope::getSIData(float* rate) {
 
 //Calibrate X, Y and Z offsets
 void Gyroscope::calibrate() {
-	//Calculate mean of 100 measurements in stable position
+	//Calculate mean of 1000 measurements in stable position
 	for (int i = 0; i < 1000; i++) {
 		cmr_read_rates(); //Read raw data
 		XOffset += parseRawData(rawX) * 0.001f;
 		YOffset += parseRawData(rawY) * 0.001f;
 		ZOffset += parseRawData(rawZ) * 0.001f;
+		delay(5);
 	}
 	Serial.print(XOffset); Serial.print(","); Serial.print(YOffset); Serial.print(","); Serial.println(ZOffset);
 }

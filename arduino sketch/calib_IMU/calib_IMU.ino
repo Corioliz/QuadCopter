@@ -1,5 +1,11 @@
-//Quadcopter - 13.12.2011
+//Quadcopter - 18.12.2012
 //Code combining IMU, Receiver, ESCs and PID
+
+// TODO:
+
+// ifdef for disabling debug functionality
+// live tuning via serial
+
 
 // --- Libraries ---
 #include "IMU.h"
@@ -36,8 +42,10 @@ Servo esc2; //Pin 12
 Servo esc3; //Pin 13
 
 //PID -      P, I, D,   ref, in, maxCtrl, minCtrl
-PID pid_phi( 50, 0.0, 10.0,   0, 0,  2000, -2000 ); //PID for Phi / roll ?
-PID pid_theta( 50, 0.0, 10.0, 0, 0,  2000, -2000); //PID for Theta / pitch ?
+PID pid_phi( 75, 0.0, 25.0,   0, 0,  2000, -2000 ); //PID for Phi / roll ?
+PID pid_PHI( 5, 0.0, 0, 0, 0, 2000, -2000 );
+
+PID pid_theta( 75, 0.0, 25.0, 0, 0,  2000, -2000); //PID for Theta / pitch ?
 PID pid_psi( 0, 0.0, 0.0, 0, 0,  2000, -2000 ); //PID for Psi d_body
 
 //Calculation values
@@ -62,6 +70,8 @@ float theta_ratio = 1; //2*0.17453; //20 degrees as rads
 float psi_ratio = 1; // ???
 float thrust_ratio = 1000;
 
+float gyroLpConst = 0.83; // Gyroscope low pass filter time constant
+float gyroLpConstSub = 1 - gyroLpConst;
 float looptime;
 // --- --- Setup --- --- --- --- ---
 void setup() {
@@ -72,8 +82,8 @@ void setup() {
 
   // --- Initialize I2C ---
   i2c_init(); 
-
-  // --- Initialize ESCs ---
+  
+   // --- Initialize ESCs ---
   //Set pins 10-13 for ESCs as outputs
   pinMode(10,OUTPUT);
   pinMode(11,OUTPUT);
@@ -85,7 +95,7 @@ void setup() {
   esc2.attach(13); //ESC 2 - Pin 13
   esc3.attach(12); //ESC 3 - Pin 12
 
-    Serial.println("ESC Pins attached");
+  Serial.println("ESC Pins attached");
 
   //  // --- Calibrate ESCs ---
   //Set highest values
@@ -101,22 +111,23 @@ void setup() {
   esc3.writeMicroseconds(1000);
 
   Serial.println("ESCs calibrated");
-
-  // --- Initialize IMU - Acce, Gyro, Magneto ---
+  
+   // --- Initialize IMU - Acce, Gyro, Magneto ---
   imu.initialize(); 
   delay(1000); //Wait for 1 sec
 
   Serial.println("IMU initialized");
+  
 
   // --- Receiver ---
   receiver.initialize();
   delay(1000); //Wait for 1 sec
 
   Serial.println("Receiver initialized");
-
   Serial.println("Initializing ready, waiting start command");
   
   // Start condition: Throttle low, right pot above half way
+  
   char startFlag = 1;
   while (startFlag) {
     receiver.read(recvec);
@@ -125,10 +136,12 @@ void setup() {
     }
     delay(100);
   }
+  
   Serial.println("Start command received, arming engines");
   pid_phi.resetITerm();
   pid_theta.resetITerm();
   pid_psi.resetITerm();
+  pid_PHI.resetITerm();
 }
 
 // --- --- Loop --- --- --- --- ---
@@ -141,25 +154,33 @@ void loop() {
   vec[0] = -vec0[1];
   vec[1] = -vec0[0];
   vec[2] = vec0[2];
-  vec[3] = -vec0[4];
-  vec[4] = vec0[3];
-  vec[5] = vec0[5];
-
+//  vec[3] = -vec0[4];
+//  vec[4] = vec0[3];
+//  vec[5] = vec0[5];
+  
+  // Low pass filter gyro readings
+  // y = a * y + (1-a)*x
+  vec[3] = gyroLpConst * vec[3] - gyroLpConstSub * vec0[4];
+  vec[4] = gyroLpConst * vec[4] + gyroLpConstSub * vec0[3];
+  vec[5] = gyroLpConst * vec[5] + gyroLpConstSub * vec0[5];
+  
   //Print measurements
-  //   for(int i=0; i < 3; i++){
-  //   Serial.print(vec[i]);
-  //   Serial.print(",");
-  //   }
-
-  //   Serial.print(vec[0]);
-  //   Serial.print(",");
-  //   Serial.print(vec[1]);
-  //   Serial.print(",");
-  //   Serial.print(vec[5]);
-  //   Serial.print(",");
+//     for(int i=0; i < 3; i++)
+//     {
+//     Serial.print(vec[i]);
+//     Serial.print(",");
+//     }
+//     
+//     Serial.print(vec[3]);
+//     Serial.print(",");
+//     Serial.print(vec[4]);
+//     Serial.print(",");
+//     Serial.print(vec[5]);
+//     Serial.print(",");
 
   //  //Read receiver values
   receiver.read(recvec); //Psi_b_d, Thrust, Theta, Phi, Cycle 1, Cycle 2
+  
   // Thrust [0 1]
   // Psi_b_d [-1 1]
   // Theta [-1 1]
@@ -189,9 +210,11 @@ void loop() {
   pidref[2] = psi_ratio * recvec[0];
 
   //PID : calculate - ref , input
-  pidvalues[0] = pid_phi.calculate( pidref[0] , vec[3] ); //Phi
-  pidvalues[1] = pid_theta.calculate( pidref[1] , vec[4] ); //Theta
-  pidvalues[2] = pid_psi.calculate( pidref[2] , vec[5] ); //Psi
+  pidvalues[0] = pid_PHI.calculate( pidref[0], vec[0] ); // angle
+  pidvalues[0] = pid_phi.calculate( pidvalues[0] , vec[3] ); // velocity
+  
+  pidvalues[1] = 0; // pid_theta.calculate( pidref[1] , vec[4] ); //Theta
+  pidvalues[2] = 0; // pid_psi.calculate( pidref[2] , vec[5] ); //Psi
 
   //Motors : calculate motor values
   // X style : Index : 0. left front, 1. right front, 2. right rear, 3. left rear
@@ -208,8 +231,8 @@ void loop() {
 
   // Check motor values
   for(int i=0; i < 4; i++){
-    if(motorvalues[i] > 1700){
-      motorvalues[i] = 1700; //Max value is 2000
+    if(motorvalues[i] > 2000){
+      motorvalues[i] = 2000; //Max value is 2000
     } 
     
     if( recvec[4] < 1900 || recvec[5] < 1900 || motorvalues [i] < 1000){
@@ -218,11 +241,14 @@ void loop() {
     Serial.print(motorvalues[i]);
     Serial.print(",");
   }
+  //Serial.println("0");
+  
     //Set motor values
   esc0.writeMicroseconds(motorvalues[0]); //Index 0
   esc1.writeMicroseconds(motorvalues[1]); //Index 1
   esc2.writeMicroseconds(motorvalues[2]); //Index 2
   esc3.writeMicroseconds(motorvalues[3]); //Index 3
-  //Serial.println(millis()-looptime);
+  
+  Serial.println(millis()-looptime);
 }
 
