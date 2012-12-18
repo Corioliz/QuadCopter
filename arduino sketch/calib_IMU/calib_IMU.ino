@@ -8,23 +8,20 @@
 
 
 // --- Libraries ---
-#include "IMU.h"
-#include "PID.h"
-#include "receiver.h"
-
-#include <Servo.h>
-
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #else
 #include "WProgram.h"
 #endif
 
-#include "i2cmaster.h"
-
+#include <Servo.h>
+#include "IMU.h"
 #include "gyroscope.h"
 #include "accelerometer.h"
 #include "magnetometer.h"
+#include "PID.h"
+#include "receiver.h"
+#include "i2cmaster.h"
 
 // --- Constructors --- --- --- --- ---
 
@@ -42,11 +39,13 @@ Servo esc2; //Pin 12
 Servo esc3; //Pin 13
 
 //PID -      P, I, D,   ref, in, maxCtrl, minCtrl
-PID pid_phi( 75, 0.0, 25.0,   0, 0,  2000, -2000 ); //PID for Phi / roll ?
-PID pid_PHI( 5, 0.0, 0, 0, 0, 2000, -2000 );
+PID pid_phiDot( 75, 0.0, 25.0,   0, 0,  2000, -2000 ); // roll velocity
+PID pid_phi( 5, 0.0, 0.0, 0, 0, 2000, -2000 ); // roll angle
 
-PID pid_theta( 75, 0.0, 25.0, 0, 0,  2000, -2000); //PID for Theta / pitch ?
-PID pid_psi( 0, 0.0, 0.0, 0, 0,  2000, -2000 ); //PID for Psi d_body
+PID pid_thetaDot( 0, 0.0, 0, 0, 0, 2000, -2000); // pitch velocity
+PID pid_theta( 0, 0.0, 0.0, 0, 0,  2000, -2000); // pitch angle
+
+PID pid_psi( 0, 0.0, 0.0, 0, 0,  2000, -2000 ); // yaw angle
 
 //Calculation values
 float vec[6] = {
@@ -73,11 +72,11 @@ float thrust_ratio = 1000;
 float gyroLpConst = 0.83; // Gyroscope low pass filter time constant
 float gyroLpConstSub = 1 - gyroLpConst;
 float looptime;
+
 // --- --- Setup --- --- --- --- ---
 void setup() {
 
   Serial.begin(9600); //Initialize serial
-
   Serial.println("Initializing...");
 
   // --- Initialize I2C ---
@@ -138,10 +137,13 @@ void setup() {
   }
   
   Serial.println("Start command received, arming engines");
+  pid_phiDot.resetITerm();
   pid_phi.resetITerm();
+  
+  pid_thetaDot.resetITerm();
   pid_theta.resetITerm();
+  
   pid_psi.resetITerm();
-  pid_PHI.resetITerm();
 }
 
 // --- --- Loop --- --- --- --- ---
@@ -149,14 +151,11 @@ void setup() {
 void loop() {
   looptime = millis();
   //Get measurement values
-  imu.complementaryFilter(vec0); //Angles (3) and ang.velocities (3)
-  //
+  imu.complementaryFilter(vec0); // roll pitch yaw dRoll dPitch dYaw
+
   vec[0] = -vec0[1];
   vec[1] = -vec0[0];
   vec[2] = vec0[2];
-//  vec[3] = -vec0[4];
-//  vec[4] = vec0[3];
-//  vec[5] = vec0[5];
   
   // Low pass filter gyro readings
   // y = a * y + (1-a)*x
@@ -189,12 +188,13 @@ void loop() {
 
   // Invert Psi_b_d
   recvec[0] = -recvec[0];
-  /*for (int i = 0; i < 6; i++) {
+  
+  // Print receiver values
+  for (int i = 0; i < 6; i++) {
     Serial.print(recvec[i]);
     Serial.print(',');
-  }*/
+  }
  
-  
   // Override receiver for testing
 //  recvec[0] = 0;
 //  recvec[1] = 0.5;
@@ -210,11 +210,13 @@ void loop() {
   pidref[2] = psi_ratio * recvec[0];
 
   //PID : calculate - ref , input
-  pidvalues[0] = pid_PHI.calculate( pidref[0], vec[0] ); // angle
-  pidvalues[0] = pid_phi.calculate( pidvalues[0] , vec[3] ); // velocity
+  pidvalues[0] = pid_phi.calculate( pidref[0], vec[0] ); // roll angle
+  pidvalues[0] = pid_phiDot.calculate( pidvalues[0] , vec[3] ); // roll velocity
   
-  pidvalues[1] = 0; // pid_theta.calculate( pidref[1] , vec[4] ); //Theta
-  pidvalues[2] = 0; // pid_psi.calculate( pidref[2] , vec[5] ); //Psi
+  pidvalues[1] = pid_theta.calculate( pidref[1], vec[1] ); // pitch angle
+  pidvalues[0] = pid_thetaDot.calculate( pidvalues[1] , vec[4] ); // roll velocity
+  
+  pidvalues[2] = pid_psi( pidref[2], vec[3] ); // yaw angle
 
   //Motors : calculate motor values
   // X style : Index : 0. left front, 1. right front, 2. right rear, 3. left rear
