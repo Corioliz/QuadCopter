@@ -149,7 +149,6 @@ class Receiver {
 void myInterruptFcn() {
   byte currentState;
   byte currentPin;
-  byte pin;
   byte mask;
   long currentTime;
   long time;
