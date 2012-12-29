@@ -2,8 +2,6 @@
 //Code combining IMU, Receiver, ESCs and PID
 
 // TODO:
-
-// ifdef for disabling debug functionality
 // live tuning via serial
 
 // --- Libraries ---

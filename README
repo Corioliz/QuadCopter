@@ -1,0 +1,4 @@
+Quadcopter software for Arduino Mega 2560
+
+How to compile with Arduino IDE:
+	Set the sketch book folder of the IDE (File->Preferences->Sketchbook location) to the repository root directory, open quadcopter.ino and compile away.
