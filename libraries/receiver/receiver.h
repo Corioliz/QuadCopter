@@ -57,11 +57,7 @@ volatile static pinPulseData pulseData[NUMCHANNELS];
 class Receiver {
 
   public:
-  
-  // Conversion factors for rx values to angles
-  
-
-  
+    
   void initialize() {
 	
 	DDRK = 0; // All port K pins as input
@@ -94,25 +90,14 @@ class Receiver {
 	// state is not known)
 	byte prevSREG = SREG;
 	cli(); // Disable interrupts while reading values
-	
-	//
+
 	rx_values[YAW] = yawFactor * (pulseData[YAW].lastWidth - yawOffset);
 	rx_values[PITCH] = pitchFactor * (pulseData[PITCH].lastWidth - pitchOffset);
 	rx_values[ROLL] = rollFactor * (pulseData[ROLL].lastWidth - rollOffset);
 	rx_values[THROTTLE] = throttleFactor * ( pulseData[THROTTLE].lastWidth - throttleOffset );
 	rx_values[CYCLE1] = pulseData[CYCLE1].lastWidth;
 	rx_values[CYCLE2] = pulseData[CYCLE2].lastWidth;
-	//
-	
-	/*
-	rx_values[YAW] = pulseData[YAW].lastWidth ;
-	rx_values[PITCH] = pulseData[PITCH].lastWidth ;
-	rx_values[ROLL] = pulseData[ROLL].lastWidth ;
-	rx_values[THROTTLE] = pulseData[THROTTLE].lastWidth ;
-	rx_values[CYCLE1] = pulseData[CYCLE1].lastWidth ;
-	rx_values[CYCLE2] = pulseData[CYCLE2].lastWidth ;
-	*/
-	
+
 	SREG = prevSREG; // Restore SREG state
   }
   void print() {
