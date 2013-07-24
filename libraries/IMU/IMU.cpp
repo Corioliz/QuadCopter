@@ -1,4 +1,4 @@
-#include "IMU.H"
+#include "IMU.h"
 
 IMU::IMU(float wAcc, float wMag) {
 	// wGyro and wAcc must sum up to 1
