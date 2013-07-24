@@ -21,7 +21,7 @@
 #include "receiver.h"
 #include "i2cmaster.h"
 
-#define DEBUG // Comment this out to disable debug prints
+//#define DEBUG // Comment this out to disable debug prints
 
 #ifdef DEBUG
 	#define DEBUG_PRINT(x)	  Serial.print (x)
@@ -47,7 +47,7 @@ Servo esc3; //Pin 13
 
 //PID -      P, I, D,   ref, in, maxCtrl, minCtrl
 PID pid_phiDot( 75, 0.0, 25.0,   0, 0,  2000, -2000 ); // roll velocity
-PID pid_phi( 5, 0.0, 0.0, 0, 0, 2000, -2000 ); // roll angle
+PID pid_phi( 50, 0.0, 0.0, 0, 0, 2000, -2000 ); // roll angle
 
 PID pid_thetaDot( 0, 0.0, 0, 0, 0, 2000, -2000); // pitch velocity
 PID pid_theta( 0, 0.0, 0.0, 0, 0,  2000, -2000); // pitch angle
@@ -79,6 +79,34 @@ float thrust_ratio = 1000;
 float gyroLpConst = 0.83; // Gyroscope low pass filter time constant
 float gyroLpConstSub = 1 - gyroLpConst;
 float looptime;
+
+int pidSerialVector[3];
+boolean readCsvToVector(int* pidVector) {
+  byte len;
+  if (Serial.available() <= 0)
+    return 0;
+  len = Serial.available();
+  char stream[20];
+  char number[5];
+  // Read the message
+  for (byte i = 0; i < len; ++i) {
+    stream[i] = Serial.read();
+  }
+  byte i = 0, j = 0, k = 0;
+  while ( i < len ) {
+    while (stream[i] != ',' && i < len) {
+      number[j] = stream[i];
+      ++i;
+      ++j;
+    }
+    ++i;
+    number[j] = '\0';
+    j = 0;
+    pidVector[k++] = atoi(number);
+  }
+  return 1;
+}
+
 
 // --- --- Setup --- --- --- --- ---
 void setup() {
@@ -171,18 +199,18 @@ void loop() {
   vec[5] = gyroLpConst * vec[5] + gyroLpConstSub * vec0[5];
   
   //Print measurements
-//     for(int i=0; i < 3; i++)
-//     {
-//     DEBUG_PRINT(vec[i]);
-//     DEBUG_PRINT(",");
-//     }
-//     
-//     DEBUG_PRINT(vec[3]);
-//     DEBUG_PRINT(",");
-//     DEBUG_PRINT(vec[4]);
-//     DEBUG_PRINT(",");
-//     DEBUG_PRINT(vec[5]);
-//     DEBUG_PRINT(",");
+     for(int i=0; i < 3; i++)
+     {
+     DEBUG_PRINT(vec[i]);
+     DEBUG_PRINT(",");
+     }
+     
+     DEBUG_PRINT(vec[3]);
+     DEBUG_PRINT(",");
+     DEBUG_PRINT(vec[4]);
+     DEBUG_PRINT(",");
+     DEBUG_PRINT(vec[5]);
+     DEBUG_PRINT(",");
 
   //  //Read receiver values
   receiver.read(recvec); //Psi_b_d, Thrust, Theta, Phi, Cycle 1, Cycle 2
@@ -218,12 +246,18 @@ void loop() {
 
   //PID : calculate - ref , input
   pidvalues[0] = pid_phi.calculate( pidref[0], vec[0] ); // roll angle
-  pidvalues[0] = pid_phiDot.calculate( pidvalues[0] , vec[3] ); // roll velocity
+  //pidvalues[0] = pid_phiDot.calculate( pidvalues[0] , vec[3] ); // roll velocity
   
   pidvalues[1] = pid_theta.calculate( pidref[1], vec[1] ); // pitch angle
-  pidvalues[0] = pid_thetaDot.calculate( pidvalues[1] , vec[4] ); // roll velocity
+  pidvalues[1] = pid_thetaDot.calculate( pidvalues[1] , vec[4] ); // roll velocity
   
   pidvalues[2] = pid_psi.calculate( pidref[2], vec[2] ); // yaw angle
+
+  for(int i=0; i < 3; i++)
+     {
+     DEBUG_PRINT(pidvalues[i]);
+     DEBUG_PRINT(",");
+     }
 
   //Motors : calculate motor values
   // X style : Index : 0. left front, 1. right front, 2. right rear, 3. left rear
@@ -257,7 +291,17 @@ void loop() {
   esc1.writeMicroseconds(motorvalues[1]); //Index 1
   esc2.writeMicroseconds(motorvalues[2]); //Index 2
   esc3.writeMicroseconds(motorvalues[3]); //Index 3
+
+  readCsvToVector(pidSerialVector);
+  pid_phi.setControlCoeffs(pidSerialVector);
+  for (int i=0; i < 3; i++) {
+    DEBUG_PRINT(pidSerialVector[i]);
+    DEBUG_PRINT(",");
+  }
   
   DEBUG_PRINTLN(millis()-looptime);
+  
+
+  
 }
 
