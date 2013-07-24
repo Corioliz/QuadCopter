@@ -128,8 +128,13 @@ void setup() {
   esc1.attach(10); //ESC 1 - Pin 10
   esc2.attach(13); //ESC 2 - Pin 13
   esc3.attach(12); //ESC 3 - Pin 12
-
   Serial.println("ESC Pins attached");
+  
+  //Set lowest values
+  esc0.writeMicroseconds(1000);
+  esc1.writeMicroseconds(1000);
+  esc2.writeMicroseconds(1000);
+  esc3.writeMicroseconds(1000);
 
    // --- Initialize IMU - Acce, Gyro, Magneto ---
   imu.initialize(); 
@@ -137,7 +142,6 @@ void setup() {
 
   Serial.println("IMU initialized");
   
-
   // --- Receiver ---
   receiver.initialize();
   delay(1000); //Wait for 1 sec
