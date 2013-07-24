@@ -131,21 +131,6 @@ void setup() {
 
   Serial.println("ESC Pins attached");
 
-  //  // --- Calibrate ESCs ---
-  //Set highest values
-  esc0.writeMicroseconds(2000);
-  esc1.writeMicroseconds(2000);
-  esc2.writeMicroseconds(2000);
-  esc3.writeMicroseconds(2000);
-  delay(2000); //Wait for 2 sec
-  //Set lowest values
-  esc0.writeMicroseconds(1000);
-  esc1.writeMicroseconds(1000);
-  esc2.writeMicroseconds(1000);
-  esc3.writeMicroseconds(1000);
-
-  Serial.println("ESCs calibrated");
-  
    // --- Initialize IMU - Acce, Gyro, Magneto ---
   imu.initialize(); 
   delay(1000); //Wait for 1 sec
