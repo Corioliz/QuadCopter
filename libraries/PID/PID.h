@@ -62,6 +62,12 @@ class PID {
 		
 		return output;
 	}
+
+	void setControlCoeffs(int* pidVector) {
+		Kp = pidVector[0];
+		Ki = pidVector[1];
+		Kd = pidVector[2];
+	}
 	
 	private:
 	long prevTime;
